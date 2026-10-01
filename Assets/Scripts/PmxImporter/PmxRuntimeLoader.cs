@@ -46,25 +46,31 @@ namespace MMDPlayerForVR.PmxImporter
             if(pmxFilePath.StartsWith("Assets/StreamingAssets"))
             {
                 pmxFilePath = Path.Combine(Application.streamingAssetsPath, pmxFilePath.Substring("Assets/StreamingAssets".Length));
+                if (pmxFilePath.StartsWith("/"))
+                {
+                     pmxFilePath = pmxFilePath.Substring(1);
+                }
             }
 #endif
 
 
-            if (!string.IsNullOrEmpty(pmxFilePath))
-            {
-                if (_logService != null)
-                {
-                    _logService.Log($"{pmxFilePath} is loading...");
-                }
-                await LoadModelAsync(pmxFilePath);
-            }
-            else
+            if (string.IsNullOrEmpty(pmxFilePath))
             {
                 if (_logService != null)
                 {
                     _logService.LogError($"{pmxFilePath} is null or empty");
+                    return;
                 }
             }
+
+            if (!File.Exists(pmxFilePath))
+            {
+                string msg = $"PMX file not found at path: {pmxFilePath}";
+                Debug.LogError($"[PmxRuntimeLoader] {msg}");
+                _logService?.LogError(msg);
+                return;
+            }
+            await LoadModelAsync(pmxFilePath);
         }
 
         /// <summary>
