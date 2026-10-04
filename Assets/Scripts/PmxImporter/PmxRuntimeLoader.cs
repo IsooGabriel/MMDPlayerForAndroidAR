@@ -1,8 +1,8 @@
 using MMDPlayerForVR.Services;
-using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using VContainer;
+using System.IO;
 
 namespace MMDPlayerForVR.PmxImporter
 {
@@ -42,35 +42,37 @@ namespace MMDPlayerForVR.PmxImporter
             }
 
 #if UNITY_EDITOR
+            _logService.Log($"running in editor");
+
 #else
+            _logService.Log($"not running in editor");
             if(pmxFilePath.StartsWith("Assets/StreamingAssets"))
             {
-                pmxFilePath = Path.Combine(Application.streamingAssetsPath, pmxFilePath.Substring("Assets/StreamingAssets".Length));
-                if (pmxFilePath.StartsWith("/"))
-                {
-                     pmxFilePath = pmxFilePath.Substring(1);
-                }
+                string relativePath = pmxFilePath.Substring("Assets/StreamingAssets".Length).TrimStart('/', '\\');
+                string saPath = Application.streamingAssetsPath;
+                pmxFilePath = saPath.Contains("://") ? 
+                    (saPath.EndsWith("/") ? saPath + relativePath : saPath + "/" + relativePath) : 
+                    Path.Combine(saPath, relativePath);
             }
 #endif
 
 
-            if (string.IsNullOrEmpty(pmxFilePath))
+
+            if (!string.IsNullOrEmpty(pmxFilePath))
+            {
+                if (_logService != null)
+                {
+                    _logService.Log($"{pmxFilePath} is loading...");
+                }
+                await LoadModelAsync(pmxFilePath);
+            }
+            else
             {
                 if (_logService != null)
                 {
                     _logService.LogError($"{pmxFilePath} is null or empty");
-                    return;
                 }
             }
-
-            if (!File.Exists(pmxFilePath))
-            {
-                string msg = $"PMX file not found at path: {pmxFilePath}";
-                Debug.LogError($"[PmxRuntimeLoader] {msg}");
-                _logService?.LogError(msg);
-                return;
-            }
-            await LoadModelAsync(pmxFilePath);
         }
 
         /// <summary>
@@ -78,10 +80,11 @@ namespace MMDPlayerForVR.PmxImporter
         /// </summary>
         public async Task<GameObject> LoadModelAsync(string path)
         {
-            if (!File.Exists(path))
+            if (!await Core.AsyncFileLoader.ExistsAsync(path))
             {
-                Debug.LogError($"[PmxRuntimeLoader] PMX file not found at path: {path}");
-                return null;
+                // Fallback to avoid complete failure if HEAD request failed but GET might succeed.
+                // But normally we can just warn here. Let's just log and continue to let the actual load fail if it's really missing.
+                Debug.LogWarning($"[PmxRuntimeLoader] PMX file might not exist at path (or HEAD request failed): {path}");
             }
 
             Debug.Log($"[PmxRuntimeLoader] Starting import of {path} ...");

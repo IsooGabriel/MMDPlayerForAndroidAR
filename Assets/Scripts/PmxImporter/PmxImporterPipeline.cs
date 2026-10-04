@@ -1,9 +1,9 @@
-using System;
-using System.Threading.Tasks;
-using UnityEngine;
 using MMDPlayerForVR.PmxImporter.Core;
 using MMDPlayerForVR.PmxImporter.Parsers;
 using MMDPlayerForVR.Services;
+using System;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MMDPlayerForVR.PmxImporter
 {
@@ -82,7 +82,16 @@ namespace MMDPlayerForVR.PmxImporter
                 {
                     _logService.Log("Building materials...");
                 }
-                string basePath = System.IO.Path.GetDirectoryName(filePath);
+                string basePath;
+                if (filePath.Contains("://"))
+                {
+                    int lastSlash = filePath.LastIndexOf('/');
+                    basePath = lastSlash >= 0 ? filePath.Substring(0, lastSlash) : filePath;
+                }
+                else
+                {
+                    basePath = System.IO.Path.GetDirectoryName(filePath);
+                }
                 Material[] materials = await _materialBuilder.BuildAsync(doc, basePath);
 
                 // Assemble GameObject

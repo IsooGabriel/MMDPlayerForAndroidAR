@@ -1,12 +1,19 @@
+using MMDPlayerForVR.PmxImporter.Core;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
-using MMDPlayerForVR.PmxImporter.Core;
+using static UnityEngine.UI.Image;
 
 namespace MMDPlayerForVR.PmxImporter.Builders
 {
     public class PmxMaterialBuilder : IPmxMaterialBuilder
     {
+        private PmxMaterialTemplates _materialTemplates = null;
+        public PmxMaterialBuilder(PmxMaterialTemplates materialTemplates)
+        {
+            _materialTemplates = materialTemplates;
+        }
+
         public async Task<Material[]> BuildAsync(PmxDocument doc, string basePath)
         {
             Material[] materials = new Material[doc.Materials.Length];
@@ -16,24 +23,62 @@ namespace MMDPlayerForVR.PmxImporter.Builders
             for (int i = 0; i < doc.Textures.Length; i++)
             {
                 // PMX texture paths often use Windows backslashes
-                string texPath = Path.Combine(basePath, doc.Textures[i].Replace('\\', '/'));
-                textures[i] = LoadTexture(texPath);
+                string texRelative = doc.Textures[i].Replace('\\', '/').TrimStart('/');
+                if (texRelative.StartsWith("./"))
+                {
+                    texRelative = texRelative.Substring(2);
+                }
+
+                string texPath;
+                if (basePath.Contains("://"))
+                {
+                    texPath = basePath.EndsWith("/") ? basePath + texRelative : basePath + "/" + texRelative;
+                }
+                else
+                {
+                    texPath = Path.Combine(basePath, texRelative);
+                }
+                textures[i] = await LoadTextureAsync(texPath);
             }
 
             // 2. Create Materials
             for (int i = 0; i < doc.Materials.Length; i++)
             {
                 var pmxMat = doc.Materials[i];
-                
+
+                // Handle transparency and alpha clipping
+                // Simple heuristic: if alpha < 1, it's semi-transparent.
+                // Otherwise, enable cutout by default since MMD heavily uses it for hair/eyelashes.
+                bool isTransparent = pmxMat.Diffuse.a < 0.99f;
+                bool isCutout = true;
+
                 // Use Standard/URP Lit as MVP before custom Toon Shader is ready
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null) shader = Shader.Find("Standard");
-                
+
+                Shader shader = null;
+                if (isTransparent)
+                {
+                    shader = _materialTemplates.transparent.shader;
+                }
+                else if (isCutout)
+                {
+                    shader = _materialTemplates.cutout.shader;
+                }
+                else
+                {
+                    shader = _materialTemplates.opaque.shader;
+                }
+
+                Debug.Log(
+                    $"[PmxMaterialBuilder] " +
+                    $"Material={pmxMat.Name}, " +
+                    $"Shader={(shader != null ? shader.name : "NULL")}"
+                );
+
                 Material mat = new Material(shader);
                 mat.name = pmxMat.Name;
 
                 mat.SetColor(shader.name.Contains("Universal") ? "_BaseColor" : "_Color", pmxMat.Diffuse);
-                
+
                 if (pmxMat.TextureIndex >= 0 && pmxMat.TextureIndex < textures.Length)
                 {
                     mat.SetTexture(shader.name.Contains("Universal") ? "_BaseMap" : "_MainTex", textures[pmxMat.TextureIndex]);
@@ -45,11 +90,6 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                     mat.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
                 }
 
-                // Handle transparency and alpha clipping
-                // Simple heuristic: if alpha < 1, it's semi-transparent.
-                // Otherwise, enable cutout by default since MMD heavily uses it for hair/eyelashes.
-                bool isTransparent = pmxMat.Diffuse.a < 0.99f;
-                bool isCutout = true;
 
                 if (isTransparent)
                 {
@@ -77,23 +117,28 @@ namespace MMDPlayerForVR.PmxImporter.Builders
             return await Task.FromResult(materials);
         }
 
-        private Texture2D LoadTexture(string path)
+        private async Task<Texture2D> LoadTextureAsync(string path)
         {
-            if (!File.Exists(path))
+            if (!await AsyncFileLoader.ExistsAsync(path))
             {
-                Debug.LogWarning($"[PmxMaterialBuilder] Texture not found: {path}");
-                return CreateFallbackTexture();
+                Debug.LogWarning($"[PmxMaterialBuilder] Texture not found (or HEAD failed): {path}");
+                // We'll proceed to try loading anyway just in case HEAD failed but GET works
             }
 
             try
             {
-                byte[] bytes = File.ReadAllBytes(path);
+                byte[] bytes = await AsyncFileLoader.ReadAllBytesAsync(path);
+                if (bytes == null)
+                {
+                    return CreateFallbackTexture();
+                }
+
                 Texture2D tex = new Texture2D(2, 2);
                 if (tex.LoadImage(bytes))
                 {
                     return tex;
                 }
-                
+
                 // TGA or BMP might fail with standard LoadImage, requires custom decoders.
                 Debug.LogWarning($"[PmxMaterialBuilder] Failed to decode texture natively (TGA/BMP custom decoder required): {path}");
                 return CreateFallbackTexture();

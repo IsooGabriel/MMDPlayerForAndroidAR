@@ -1,8 +1,8 @@
+using MMDPlayerForVR.PmxImporter.Core;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
-using MMDPlayerForVR.PmxImporter.Core;
 
 namespace MMDPlayerForVR.PmxImporter.Parsers
 {
@@ -12,7 +12,32 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
 
         public async Task<PmxDocument> ParseAsync(string filePath)
         {
-            return await Task.Run(() => Parse(filePath));
+            byte[] fileBytes = await AsyncFileLoader.ReadAllBytesAsync(filePath);
+            if (fileBytes == null) throw new FileNotFoundException($"File not found or failed to load: {filePath}");
+
+            return await Task.Run(() => ParseFromBytes(fileBytes));
+        }
+
+        public PmxDocument ParseFromBytes(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            using (var reader = new PmxBinaryReader(stream))
+            {
+                PmxDocument doc = new PmxDocument();
+
+                ParseHeader(reader, doc);
+                ParseVertices(reader, doc);
+                ParseFaces(reader, doc);
+                ParseTextures(reader, doc);
+                ParseMaterials(reader, doc);
+                ParseBones(reader, doc);
+                ParseMorphs(reader, doc);
+                ParseDisplayFrames(reader);
+                ParseRigidBodies(reader, doc);
+                ParseJoints(reader, doc);
+
+                return doc;
+            }
         }
 
         public PmxDocument Parse(string filePath)

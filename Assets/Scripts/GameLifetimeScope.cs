@@ -12,7 +12,8 @@ namespace MMDPlayerForVR
     {
         [SerializeField] private PlayerLogService _playerLogService;
         [SerializeField] private PmxRuntimeLoader _pmxRuntimeLoader;
-        
+        [SerializeField] private PmxMaterialTemplates _materialTemplates;
+
         protected override void Configure(IContainerBuilder builder)
         {
             // Register UI/Services
@@ -29,12 +30,16 @@ namespace MMDPlayerForVR
             builder.Register<PmxParser>(Lifetime.Transient);
             builder.Register<IPmxMeshBuilder, PmxMeshBuilder>(Lifetime.Transient);
             builder.Register<IPmxBoneBuilder, PmxBoneBuilder>(Lifetime.Transient);
-            builder.Register<IPmxMaterialBuilder, PmxMaterialBuilder>(Lifetime.Transient);
+            builder.Register<IPmxMaterialBuilder>
+            (
+                resolver => new PmxMaterialBuilder(_materialTemplates),
+                Lifetime.Transient
+            );
             builder.Register<IPmxPhysicsBuilder, PmxPhysicsBuilder>(Lifetime.Transient);
-            
+
             // Register pipeline
             builder.Register<PmxImporterPipeline>(Lifetime.Transient);
-            
+
             // Register target for injection if set
             if (_pmxRuntimeLoader != null)
             {

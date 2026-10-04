@@ -1,6 +1,6 @@
+using MMDPlayerForVR.PmxImporter.Core;
 using System.Threading.Tasks;
 using UnityEngine;
-using MMDPlayerForVR.PmxImporter.Core;
 
 namespace MMDPlayerForVR.PmxImporter.Builders
 {
@@ -14,7 +14,9 @@ namespace MMDPlayerForVR.PmxImporter.Builders
             mesh.name = doc.Name;
 
             if (doc.Vertices.Length > 65535)
+            {
                 mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            }
 
             Vector3[] vertices = new Vector3[doc.Vertices.Length];
             Vector3[] normals = new Vector3[doc.Vertices.Length];
@@ -70,7 +72,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
         private BoneWeight CreateBoneWeight(PmxVertex v)
         {
             BoneWeight bw = new BoneWeight();
-            
+
             // Handle up to 4 bones
             if (v.BoneIndices.Length > 0) { bw.boneIndex0 = v.BoneIndices[0]; bw.weight0 = v.BoneWeights[0]; }
             if (v.BoneIndices.Length > 1) { bw.boneIndex1 = v.BoneIndices[1]; bw.weight1 = v.BoneWeights[1]; }
