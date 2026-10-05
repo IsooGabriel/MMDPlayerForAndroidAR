@@ -38,11 +38,32 @@ namespace MMDPlayerForVR.Pose.Application
     {
         /// <summary>IKチェーンリストに従い、Transform上でIKを解く</summary>
         void Solve(IReadOnlyList<IkChain> chains, IReadOnlyDictionary<string, bool> ikStates);
+
+        /// <summary>単一のIKチェーンをTransform上で解く。</summary>
+        void Solve(IkChain chain, IReadOnlyDictionary<string, bool> ikStates);
     }
 
     public interface IIkContext
     {
         IReadOnlyList<IkChain> IkChains { get; }
+    }
+
+    public interface IAppendTransformSolver
+    {
+        /// <summary>単一ボーンの付与変形をTransform上で適用する。</summary>
+        void Apply(AppendTransform appendTransform);
+    }
+
+    public interface IPoseEvaluationContext
+    {
+        /// <summary>変形階層、ボーンインデックス順に整列済みの評価ステップ。</summary>
+        IReadOnlyList<BoneEvaluationStep> EvaluationSteps { get; }
+    }
+
+    public interface IPoseTransformEvaluator
+    {
+        /// <summary>付与変形とIKを整列済み評価ステップに従って処理する。</summary>
+        void Evaluate(IPoseEvaluationContext context, IReadOnlyDictionary<string, bool> ikStates);
     }
 
     public class ApplyInitialPoseUseCase
@@ -60,7 +81,13 @@ namespace MMDPlayerForVR.Pose.Application
             _ikSolver = ikSolver;
         }
 
-        public async Task ExecuteAsync(IPoseApplier applier, IIkContext ikContext, string vmdRelativePath, IIkSolver ikSolverOverride = null)
+        public async Task ExecuteAsync(
+            IPoseApplier applier,
+            IIkContext ikContext,
+            string vmdRelativePath,
+            IIkSolver ikSolverOverride = null,
+            IPoseEvaluationContext evaluationContext = null,
+            IPoseTransformEvaluator transformEvaluator = null)
         {
             // 1. VMD読み込み
             byte[] data;
@@ -113,9 +140,20 @@ namespace MMDPlayerForVR.Pose.Application
             // 5. FK適用
             applier.Apply(pose);
 
-            // 6. IK解決（FK適用後・物理スナップ前）
+            // 6. 付与変形とIK解決（FK適用後・物理スナップ前）
             IIkSolver effectiveSolver = ikSolverOverride ?? _ikSolver;
-            if (effectiveSolver != null && ikContext != null)
+            if (transformEvaluator != null && evaluationContext != null)
+            {
+                try
+                {
+                    transformEvaluator.Evaluate(evaluationContext, pose.ikStates);
+                }
+                catch (System.Exception ex)
+                {
+                    UnityEngine.Debug.LogError($"[Pose] 付与/IK評価中にエラーが発生しました: {ex}");
+                }
+            }
+            else if (effectiveSolver != null && ikContext != null)
             {
                 try
                 {
