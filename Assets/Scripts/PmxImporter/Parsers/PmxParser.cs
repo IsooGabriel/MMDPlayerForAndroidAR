@@ -1,4 +1,5 @@
 using MMDPlayerForVR.PmxImporter.Core;
+using MMDPlayerForVR.Pose.Application;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -9,10 +10,15 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
     public class PmxParser
     {
         private int _additionalUvCount;
+        private IStreamingAssetsReader _streamedAssetsReader;
+        public PmxParser(IStreamingAssetsReader streamedAssetsReader)
+        {
+            _streamedAssetsReader = streamedAssetsReader;
+        }
 
         public async Task<PmxDocument> ParseAsync(string filePath)
         {
-            byte[] fileBytes = await AsyncFileLoader.ReadAllBytesAsync(filePath);
+            byte[] fileBytes = await _streamedAssetsReader.ReadAllBytesAsync(filePath);
             if (fileBytes == null) throw new FileNotFoundException($"File not found or failed to load: {filePath}");
 
             return await Task.Run(() => ParseFromBytes(fileBytes));

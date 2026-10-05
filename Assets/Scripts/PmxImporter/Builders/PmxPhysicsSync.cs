@@ -57,5 +57,16 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                 BoneTransform.rotation = targetRot;
             }
         }
+        public void TeleportToBone()
+        {
+            if (ProxyRigidbody != null && BoneTransform != null)
+            {
+                Vector3 targetPos = BoneTransform.position + BoneTransform.rotation * _boneToProxyPosOffset;
+                Quaternion targetRot = BoneTransform.rotation * _boneToProxyRotOffset;
+                
+                ProxyRigidbody.position = targetPos;
+                ProxyRigidbody.rotation = targetRot;
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 using MMDPlayerForVR.PmxImporter.Core;
+using MMDPlayerForVR.Pose.Application;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -9,9 +10,11 @@ namespace MMDPlayerForVR.PmxImporter.Builders
     public class PmxMaterialBuilder : IPmxMaterialBuilder
     {
         private PmxMaterialTemplates _materialTemplates = null;
-        public PmxMaterialBuilder(PmxMaterialTemplates materialTemplates)
+        private IStreamingAssetsReader _streamingAssetsReader;
+        public PmxMaterialBuilder(PmxMaterialTemplates materialTemplates, IStreamingAssetsReader streamingAssetsReader)
         {
             _materialTemplates = materialTemplates;
+            _streamingAssetsReader = streamingAssetsReader;
         }
 
         public async Task<Material[]> BuildAsync(PmxDocument doc, string basePath)
@@ -119,7 +122,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
 
         private async Task<Texture2D> LoadTextureAsync(string path)
         {
-            if (!await AsyncFileLoader.ExistsAsync(path))
+            if (!await _streamingAssetsReader.ExistsAsync(path))
             {
                 Debug.LogWarning($"[PmxMaterialBuilder] Texture not found (or HEAD failed): {path}");
                 // We'll proceed to try loading anyway just in case HEAD failed but GET works
@@ -127,7 +130,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
 
             try
             {
-                byte[] bytes = await AsyncFileLoader.ReadAllBytesAsync(path);
+                byte[] bytes = await _streamingAssetsReader.ReadAllBytesAsync(path);
                 if (bytes == null)
                 {
                     return CreateFallbackTexture();

@@ -1,3 +1,5 @@
+using MMDPlayerForVR.Pose.Application;
+using MMDPlayerForVR.Services;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -5,10 +7,34 @@ using UnityEngine.Networking;
 
 namespace MMDPlayerForVR.PmxImporter.Core
 {
-    public static class AsyncFileLoader
+    public class AsyncFileLoader : IStreamingAssetsReader
     {
-        public static async Task<byte[]> ReadAllBytesAsync(string path)
+        private PlayerLogService _playLogService;
+        public AsyncFileLoader(PlayerLogService playLogService)
         {
+            _playLogService = playLogService;
+        }
+        public string AndroidPathResolves(string path)
+        {
+            if (path.StartsWith("Assets/StreamingAssets"))
+            {
+                string relativePath = path.Substring("Assets/StreamingAssets".Length).TrimStart('/', '\\');
+                string saPath = Application.streamingAssetsPath;
+                path = saPath.Contains("://") ?
+                    (saPath.EndsWith("/") ? saPath + relativePath : saPath + "/" + relativePath) :
+                    Path.Combine(saPath, relativePath);
+            }
+            _playLogService.Log($"log:{path}");
+            return path;
+        }
+
+        public async Task<byte[]> ReadAllBytesAsync(string path)
+        {
+#if UNITY_EDITOR
+#else
+        path = AndroidPathResolves(path);
+#endif
+
             if (path.Contains("://") || path.Contains(":///"))
             {
                 using (UnityWebRequest www = UnityWebRequest.Get(path))
@@ -40,8 +66,12 @@ namespace MMDPlayerForVR.PmxImporter.Core
             }
         }
 
-        public static async Task<bool> ExistsAsync(string path)
+        public async Task<bool> ExistsAsync(string path)
         {
+#if UNITY_EDITOR
+#else
+        path = AndroidPathResolves(path);
+#endif
             if (path.Contains("://") || path.Contains(":///"))
             {
                 using (UnityWebRequest www = UnityWebRequest.Head(path))

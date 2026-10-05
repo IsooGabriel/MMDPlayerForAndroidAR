@@ -21,6 +21,12 @@ namespace MMDPlayerForVR.PmxImporter
         private readonly IPmxPhysicsBuilder _physicsBuilder;
         private readonly PlayerLogService _logService;
 
+        /// <summary>最後にインポートしたPMXドキュメント。インポート前はnull。</summary>
+        public PmxDocument LastImportedDocument { get; private set; }
+
+        /// <summary>最後にインポートしたボーンTransform配列（インデックス対応）。インポート前はnull。</summary>
+        public Transform[] LastImportedBoneTransforms { get; private set; }
+
         [VContainer.Inject]
         public PmxImporterPipeline(
             PmxParser parser,
@@ -127,6 +133,11 @@ namespace MMDPlayerForVR.PmxImporter
                 {
                     _logService.Log("Model import completed successfully!");
                 }
+
+                // インポート成功後にPMXデータとボーンTransformを保持（IK用）
+                LastImportedDocument = doc;
+                LastImportedBoneTransforms = boneTransforms;
+
                 return rootObj;
             }
             catch (Exception ex)
