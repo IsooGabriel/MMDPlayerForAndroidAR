@@ -7,8 +7,9 @@ namespace MMDPlayerForVR.Pose.Domain
         public int BoneIndex;       // ボーン配列のインデックス
         public string BoneName;
         public bool HasAngleLimit;
-        public Vector3 LowerLimit;  // ラジアン、MMD座標系
-        public Vector3 UpperLimit;  // ラジアン、MMD座標系
+        public Vector3 LowerLimit;  // 度、Unity座標系
+        public Vector3 UpperLimit;  // 度、Unity座標系
+        public bool IsXAxisOnlyLimit;
     }
 
     public class IkChain

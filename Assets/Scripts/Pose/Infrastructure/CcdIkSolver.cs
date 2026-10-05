@@ -30,18 +30,26 @@ namespace MMDPlayerForVR.Pose.Infrastructure
 
             foreach (var chain in chains)
             {
-                // IKがオフならスキップ
-                if (ikStates != null && ikStates.TryGetValue(chain.IkBoneName, out bool on) && !on)
-                    continue;
+                Solve(chain, ikStates);
+            }
+        }
 
-                try
-                {
-                    SolveChain(chain);
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"{LogPrefix} チェーン '{chain.IkBoneName}' の解決中にエラー（スキップ）: {ex.Message}");
-                }
+        /// <inheritdoc/>
+        public void Solve(IkChain chain, IReadOnlyDictionary<string, bool> ikStates)
+        {
+            if (chain == null) return;
+
+            // IKがオフならスキップ
+            if (ikStates != null && ikStates.TryGetValue(chain.IkBoneName, out bool on) && !on)
+                return;
+
+            try
+            {
+                SolveChain(chain);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"{LogPrefix} チェーン '{chain.IkBoneName}' の解決中にエラー（スキップ）: {ex.Message}");
             }
         }
 
@@ -106,18 +114,15 @@ namespace MMDPlayerForVR.Pose.Infrastructure
                     if (float.IsNaN(toEffector.x) || float.IsNaN(toTarget.x))
                         continue;
 
-                    float dot = Mathf.Clamp(Vector3.Dot(toEffector, toTarget), -1f, 1f);
-                    float angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
+                    Quaternion stepRotation = linkData.HasAngleLimit && linkData.IsXAxisOnlyLimit
+                        ? CreateXAxisLimitedStepRotation(toEffector, toTarget, limitAngleDeg)
+                        : CreateStepRotation(toEffector, toTarget, limitAngleDeg);
 
-                    // 1ステップ最大回転角でクランプ
-                    angle = Mathf.Min(angle, limitAngleDeg);
-
-                    Vector3 axis = Vector3.Cross(toEffector, toTarget);
-                    if (axis.sqrMagnitude < 1e-12f)
+                    if (stepRotation == Quaternion.identity)
                         continue;
 
                     // リンクのlocalRotationに回転を掛ける
-                    link.localRotation = link.localRotation * Quaternion.AngleAxis(angle, axis);
+                    link.localRotation = link.localRotation * stepRotation;
 
                     // 角度制限があれば適用
                     if (linkData.HasAngleLimit)
@@ -140,27 +145,83 @@ namespace MMDPlayerForVR.Pose.Infrastructure
 
         private static void ApplyAngleLimit(Transform link, IkLinkData linkData)
         {
-            // MMD座標系ラジアン→度変換
-            Vector3 minDeg = linkData.LowerLimit * Mathf.Rad2Deg;
-            Vector3 maxDeg = linkData.UpperLimit * Mathf.Rad2Deg;
+            if (linkData.IsXAxisOnlyLimit)
+            {
+                float angle = GetSignedAxisAngle(link.localRotation, Vector3.right);
+                angle = Mathf.Clamp(NormalizeAngle(angle), linkData.LowerLimit.x, linkData.UpperLimit.x);
+                link.localRotation = Quaternion.AngleAxis(angle, Vector3.right);
+                return;
+            }
 
-            // ひざ等の下限が-179.9°以下の場合は伸び切り対策としてマージンを持たせる
-            if (minDeg.x < -179.9f) minDeg.x = -179.9f;
+            link.localRotation.ToAngleAxis(out float rawAngle, out Vector3 rawAxis);
+            float signedAngle = NormalizeAngle(rawAngle);
+            Vector3 angleVector = rawAxis.normalized * signedAngle;
+            angleVector.x = Mathf.Clamp(NormalizeAngle(angleVector.x), linkData.LowerLimit.x, linkData.UpperLimit.x);
+            angleVector.y = Mathf.Clamp(NormalizeAngle(angleVector.y), linkData.LowerLimit.y, linkData.UpperLimit.y);
+            angleVector.z = Mathf.Clamp(NormalizeAngle(angleVector.z), linkData.LowerLimit.z, linkData.UpperLimit.z);
 
-            Vector3 euler = link.localEulerAngles;
-
-            // Unity localEulerAngles は 0〜360 なので -180〜180 に正規化
-            euler.x = NormalizeAngle(euler.x);
-            euler.y = NormalizeAngle(euler.y);
-            euler.z = NormalizeAngle(euler.z);
-
-            euler.x = Mathf.Clamp(euler.x, minDeg.x, maxDeg.x);
-            euler.y = Mathf.Clamp(euler.y, minDeg.y, maxDeg.y);
-            euler.z = Mathf.Clamp(euler.z, minDeg.z, maxDeg.z);
-
-            link.localEulerAngles = euler;
+            float magnitude = angleVector.magnitude;
+            link.localRotation = magnitude <= Mathf.Epsilon
+                ? Quaternion.identity
+                : Quaternion.AngleAxis(magnitude, angleVector / magnitude);
         }
 
-        private static float NormalizeAngle(float angle) => angle > 180f ? angle - 360f : angle;
+        private static Quaternion CreateStepRotation(Vector3 toEffector, Vector3 toTarget, float limitAngleDeg)
+        {
+            float dot = Mathf.Clamp(Vector3.Dot(toEffector, toTarget), -1f, 1f);
+            float angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
+            angle = Mathf.Min(angle, limitAngleDeg);
+
+            Vector3 axis = Vector3.Cross(toEffector, toTarget);
+            if (axis.sqrMagnitude < 1e-12f)
+                return Quaternion.identity;
+
+            return Quaternion.AngleAxis(angle, axis);
+        }
+
+        private static Quaternion CreateXAxisLimitedStepRotation(Vector3 toEffector, Vector3 toTarget, float limitAngleDeg)
+        {
+            Vector3 effectorOnPlane = Vector3.ProjectOnPlane(toEffector, Vector3.right);
+            Vector3 targetOnPlane = Vector3.ProjectOnPlane(toTarget, Vector3.right);
+            if (effectorOnPlane.sqrMagnitude < 1e-12f || targetOnPlane.sqrMagnitude < 1e-12f)
+                return Quaternion.identity;
+
+            float angle = Vector3.SignedAngle(effectorOnPlane, targetOnPlane, Vector3.right);
+            angle = Mathf.Clamp(angle, -limitAngleDeg, limitAngleDeg);
+            return Quaternion.AngleAxis(angle, Vector3.right);
+        }
+
+        private static float GetSignedAxisAngle(Quaternion rotation, Vector3 axis)
+        {
+            Vector3 rotationVector = new Vector3(rotation.x, rotation.y, rotation.z);
+            Vector3 projected = Vector3.Project(rotationVector, axis);
+            Quaternion twist = new Quaternion(projected.x, projected.y, projected.z, rotation.w);
+            twist = Normalize(twist);
+            twist.ToAngleAxis(out float angle, out Vector3 twistAxis);
+            if (Vector3.Dot(twistAxis, axis) < 0f)
+            {
+                angle = -angle;
+            }
+
+            return NormalizeAngle(angle);
+        }
+
+        private static Quaternion Normalize(Quaternion value)
+        {
+            float magnitude = Mathf.Sqrt(value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w);
+            if (magnitude <= Mathf.Epsilon || float.IsNaN(magnitude))
+            {
+                return Quaternion.identity;
+            }
+
+            float inv = 1f / magnitude;
+            return new Quaternion(value.x * inv, value.y * inv, value.z * inv, value.w * inv);
+        }
+
+        private static float NormalizeAngle(float angle)
+        {
+            angle = Mathf.Repeat(angle + 180f, 360f) - 180f;
+            return angle == -180f ? 180f : angle;
+        }
     }
 }
