@@ -19,7 +19,7 @@ namespace MMDPlayerForVR.PmxImporter
         [Header("Test Configuration")]
         [Tooltip("Absolute path to the .pmx file to load (e.g. C:/Models/Miku/miku.pmx)")]
         public string pmxFilePath = "";
-        public string vmdPath = "";
+        public string vmdFilePath = "";
 
         [Tooltip("If true, automatically loads the model when the scene starts")]
         public bool loadOnStart = false;
@@ -33,6 +33,8 @@ namespace MMDPlayerForVR.PmxImporter
         private ApplyInitialPoseUseCase _poseUseCase;
         private IStreamingAssetsReader _streamingAssetsReader;
         private FilePickerReceiver _filePickerReceiver;
+
+        public readonly string _tposeName = "T-Pose";
 
         [Inject]
         public void Construct(PmxImporterPipeline pipeline, PlayerLogService logService, ApplyInitialPoseUseCase poseUseCase, IStreamingAssetsReader streamingAssetsReader, FilePickerReceiver filePickerReceiver)
@@ -57,7 +59,7 @@ namespace MMDPlayerForVR.PmxImporter
                 return;
             }
 
-            Init(pmxFilePath);
+            Init(pmxFilePath, vmdFilePath);
 
 #if UNITY_EDITOR
             _logService.Log($"running in editor");
@@ -65,13 +67,31 @@ namespace MMDPlayerForVR.PmxImporter
 #else
             _logService.Log($"not running in editor");
 #endif
-            _filePickerReceiver.OnGetURI = Init;
+            _filePickerReceiver.OnGetModel = InitModel;
+            _filePickerReceiver.OnGetMotion = InitMotion;
 
         }
 
 
-        public async void Init(string pmxPath)
+        public void InitModel(string pmxPath)
         {
+            Init(pmxPath, vmdFilePath);
+        }
+        public void InitMotion(string vmdPath)
+        {
+            Init(pmxFilePath, vmdPath);
+        }
+        public async void Init(string pmxPath, string vmdPath)
+        {
+            pmxFilePath = pmxPath;
+            if (vmdPath == _tposeName)
+            {
+                vmdFilePath = null; // T-Poseを適用する場合はVMDファイルを指定しない
+            }
+            else
+            {
+                vmdFilePath = vmdPath;
+            }
             foreach (Transform child in transform)
             {
                 Destroy(child.gameObject);
@@ -157,6 +177,8 @@ namespace MMDPlayerForVR.PmxImporter
             // IK setup
             IkContextAdapter ikContext = null;
             CcdIkSolver ikSolver = null;
+            PoseEvaluationContextAdapter evaluationContext = null;
+            PoseTransformEvaluator transformEvaluator = null;
 
             var pmxDoc = _pipeline.LastImportedDocument;
             if (pmxDoc != null && pmxDoc.Bones != null)
@@ -195,6 +217,7 @@ namespace MMDPlayerForVR.PmxImporter
                 }
 
                 ikSolver = new CcdIkSolver(boneMap);
+                evaluationContext = new PoseEvaluationContextAdapter(pmxDoc.Bones, ikContext.IkChains);
 
                 if (skipLegIk)
                 {
@@ -228,8 +251,14 @@ namespace MMDPlayerForVR.PmxImporter
                     : ikSolver;
             }
 
-            // 検証用VMD（早苗ピース.vmd）のフレーム0を適用する
-            await _poseUseCase.ExecuteAsync(applier, ikContext, vmdPath, effectiveSolver);
+            if (evaluationContext != null)
+            {
+                var appendSolver = new AppendTransformSolver(boneMap);
+                transformEvaluator = new PoseTransformEvaluator(appendSolver, effectiveSolver, evaluationContext);
+            }
+
+            // 検証用VMDのフレーム0を適用する
+            await _poseUseCase.ExecuteAsync(applier, ikContext, vmdFilePath, effectiveSolver, evaluationContext, transformEvaluator);
 
             // [IK] 5.6: IK解決後のボーン長変化ログ（メッシュ伸び検出）
             LogBoneLengthChanges(boneMap, bindBoneLengths);
@@ -309,6 +338,16 @@ namespace MMDPlayerForVR.PmxImporter
                 }
             }
             _inner.Solve(chains, overrideStates);
+        }
+
+        /// <inheritdoc/>
+        public void Solve(
+            MMDPlayerForVR.Pose.Domain.IkChain chain,
+            IReadOnlyDictionary<string, bool> ikStates)
+        {
+            if (chain == null) return;
+            if (LegIkNames.Contains(chain.IkBoneName)) return;
+            _inner.Solve(chain, ikStates);
         }
     }
 }
