@@ -10,7 +10,7 @@ namespace MMDPlayerForVR
 {
     public class ScreenShot : MonoBehaviour
     {
-        public string _imageFolderPath = "MMD4AR";
+        public string _imagesFolderPath = "Photos";
         private PmxRuntimeLoader _pmxRuntimeLoader;
         private PlayerLogService _playerLogService;
 
@@ -32,11 +32,11 @@ namespace MMDPlayerForVR
                 string fileName = $"MMD4AR_{Path.GetFileNameWithoutExtension(_pmxRuntimeLoader.pmxFilePath)}" +
                                     $"_{Path.GetFileNameWithoutExtension(_pmxRuntimeLoader.vmdFilePath)}" +
                                     $"_{System.DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
-                string path = Path.Combine(Application.persistentDataPath, fileName);
+                string path = Path.Combine(Application.persistentDataPath, _imagesFolderPath, fileName);
                 File.WriteAllBytes(path, png);
                 _playerLogService.Log($"Saved: {path} ({png.Length} bytes)");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _playerLogService.LogError($"[Photo] {e}");
             }
