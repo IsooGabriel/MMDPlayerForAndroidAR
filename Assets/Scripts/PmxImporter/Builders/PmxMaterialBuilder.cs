@@ -131,16 +131,41 @@ namespace MMDPlayerForVR.PmxImporter.Builders
             try
             {
                 byte[] bytes = await _streamingAssetsReader.ReadAllBytesAsync(path);
+
+
                 if (bytes == null)
                 {
                     return CreateFallbackTexture();
                 }
 
                 Texture2D tex = new Texture2D(2, 2);
-                if (tex.LoadImage(bytes))
+                DecodedImage decodedImage;
+                // not a png or jpg
+                if ((bytes.Length >= 8 &&
+                    bytes[0] == 0x89 &&
+                    bytes[1] == 0x50 &&
+                    bytes[2] == 0x4E &&
+                    bytes[3] == 0x47) ||
+                    (bytes.Length >= 3 &&
+                    bytes[0] == 0xFF &&
+                    bytes[1] == 0xD8 &&
+                    bytes[2] == 0xFF))
                 {
+                    if (tex.LoadImage(bytes))
+                    {
+                        return tex;
+                    }
+                }
+                else
+                {
+                    decodedImage = TgaDecoder.Decode(bytes);
+                    tex = new Texture2D(decodedImage.Width, decodedImage.Height, TextureFormat.RGBA32, true, false);
+                    tex.SetPixelData(decodedImage.Rgba32, 0);
+                    tex.Apply(true, true);
                     return tex;
                 }
+
+
 
                 // TGA or BMP might fail with standard LoadImage, requires custom decoders.
                 Debug.LogWarning($"[PmxMaterialBuilder] Failed to decode texture natively (TGA/BMP custom decoder required): {path}");
