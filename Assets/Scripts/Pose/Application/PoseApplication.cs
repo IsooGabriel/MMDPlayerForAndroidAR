@@ -1,6 +1,7 @@
 using MMDPlayerForVR.Pose.Domain;
 using MMDPlayerForVR.Services;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace MMDPlayerForVR.Pose.Application
@@ -97,13 +98,13 @@ namespace MMDPlayerForVR.Pose.Application
             }
             catch (System.Exception ex)
             {
-                UnityEngine.Debug.LogError($"[Pose] VMDファイルの読み込みに失敗しました: {vmdRelativePath}\n{ex}");
+                _playerLogService.LogError($"[Pose] VMDファイルの読み込みに失敗しました: {vmdRelativePath}\n{ex}");
                 return;
             }
 
             if (data == null || data.Length == 0)
             {
-                UnityEngine.Debug.LogError($"[Pose] VMDファイルが空または見つかりません: {vmdRelativePath}");
+                _playerLogService.LogError($"[Pose] VMDファイルが空または見つかりません: {vmdRelativePath}");
                 return;
             }
 
@@ -115,11 +116,11 @@ namespace MMDPlayerForVR.Pose.Application
             }
             catch (System.Exception ex)
             {
-                UnityEngine.Debug.LogError($"[Pose] VMDファイルのパースに失敗しました: {vmdRelativePath}\n{ex}");
+                _playerLogService.LogError($"[Pose] VMDファイルのパースに失敗しました: {vmdRelativePath}\n{ex}");
                 return;
             }
 
-            _playerLogService.Log($"frames:{frames.Count}");
+            _playerLogService.Log($"[Pose]frames:{frames.Count}");
 
             // 3. IK ON/OFF区画パース
             IReadOnlyDictionary<string, bool> ikStates;
@@ -129,7 +130,7 @@ namespace MMDPlayerForVR.Pose.Application
             }
             catch (System.Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[IK] IK状態のパースに失敗しました（無視します）: {ex.Message}");
+                _playerLogService.LogWarning($"[IK] IK状態のパースに失敗しました（無視します）: {ex.Message}");
                 ikStates = new Dictionary<string, bool>();
             }
 
@@ -139,6 +140,7 @@ namespace MMDPlayerForVR.Pose.Application
 
             // 5. FK適用
             applier.Apply(pose);
+            _playerLogService.Log($"[Pose]Applied {Path.GetFileName(vmdRelativePath)}");
 
             // 6. 付与変形とIK解決（FK適用後・物理スナップ前）
             IIkSolver effectiveSolver = ikSolverOverride ?? _ikSolver;

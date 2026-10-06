@@ -1,5 +1,7 @@
-using UnityEngine;
+using System;
+using System.IO;
 using TMPro;
+using UnityEngine;
 
 namespace MMDPlayerForVR.Services
 {
@@ -12,6 +14,8 @@ namespace MMDPlayerForVR.Services
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI _displayLog;
 
+        private string _logFilePath;
+
         /// <summary>
         /// Logs a message to the UI.
         /// </summary>
@@ -21,6 +25,7 @@ namespace MMDPlayerForVR.Services
             {
                 _displayLog.text = $"{message}\n{_displayLog.text}";
             }
+            SaveLog(message);
             Debug.Log(message);
         }
 
@@ -33,7 +38,32 @@ namespace MMDPlayerForVR.Services
             {
                 _displayLog.text = $"<color=red>Error: {message}</color>\n{_displayLog.text}";
             }
+            SaveLog(message);
             Debug.LogError(message);
+        }
+
+        public void LogWarning(string message)
+        {
+            if (_displayLog != null)
+            {
+                _displayLog.text = $"<color=yellow>Warning: {message}</color>\n{_displayLog.text}";
+            }
+            SaveLog(message);
+            Debug.LogWarning(message);
+        }
+
+        private void SaveLog(string message)
+        {
+            string log = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}";
+            File.AppendAllText(_logFilePath, log);
+        }
+
+        private void OnEnable()
+        {
+            _logFilePath = Path.Combine(
+                Application.persistentDataPath,
+                "MMD4AR_GabuGabuNoMi.log"
+            );
         }
     }
 }

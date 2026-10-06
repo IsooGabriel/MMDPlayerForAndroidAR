@@ -48,7 +48,7 @@ namespace MMDPlayerForVR.Pose.Infrastructure
             {
                 if (!_bones.ContainsKey(name))
                 {
-                    Debug.LogWarning($"[Pose] 対応するボーンなし: {name}");
+                    _playerLogService.LogWarning($"[Pose] 対応するボーンなし: {name}");
                 }
             }
         }
