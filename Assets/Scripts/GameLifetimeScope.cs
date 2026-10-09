@@ -49,7 +49,8 @@ namespace MMDPlayerForVR
                 resolver =>
                 {
                     IStreamingAssetsReader streamingAssetsReader = resolver.Resolve<IStreamingAssetsReader>();
-                    return new PmxMaterialBuilder(_materialTemplates, streamingAssetsReader);
+                    PlayerLogService playerLogService = resolver.Resolve<PlayerLogService>();
+                    return new PmxMaterialBuilder(_materialTemplates, streamingAssetsReader, playerLogService);
                 },
                 Lifetime.Transient
             );

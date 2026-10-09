@@ -19,7 +19,10 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
         public async Task<PmxDocument> ParseAsync(string filePath)
         {
             byte[] fileBytes = await _streamedAssetsReader.ReadAllBytesAsync(filePath);
-            if (fileBytes == null) throw new FileNotFoundException($"File not found or failed to load: {filePath}");
+            if (fileBytes == null)
+            {
+                throw new FileNotFoundException($"File not found or failed to load: {filePath}");
+            }
 
             return await Task.Run(() => ParseFromBytes(fileBytes));
         }
@@ -71,7 +74,10 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
         private void ParseHeader(PmxBinaryReader reader, PmxDocument doc)
         {
             string signature = new string(reader.ReadChars(4));
-            if (signature != "PMX ") throw new FormatException("Invalid PMX signature.");
+            if (!signature.StartsWith("PMX"))
+            {
+                throw new FormatException("Invalid PMX signature.");
+            }
 
             doc.Version = reader.ReadSingle().ToString("F1");
             byte globalCount = reader.ReadByte();

@@ -1,5 +1,6 @@
 using MMDPlayerForVR.Pose.Application;
 using MMDPlayerForVR.Services;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace MMDPlayerForVR.PmxImporter.Core
     public class AsyncFileLoader : IStreamingAssetsReader
     {
         private PlayerLogService _playLogService;
+        private readonly string _temporaryCachePath = "/data/user/0/";
         public AsyncFileLoader(PlayerLogService playLogService)
         {
             _playLogService = playLogService;
@@ -56,13 +58,15 @@ namespace MMDPlayerForVR.PmxImporter.Core
             }
             else
             {
-                if (!File.Exists(path))
+                try
                 {
-                    Debug.LogError($"[AsyncFileLoader] File not found: {path}");
-                    return null;
+                    return await Task.Run(() => File.ReadAllBytes(path));
                 }
-
-                return await Task.Run(() => File.ReadAllBytes(path));
+                catch (Exception e)
+                {
+                    _playLogService.LogError($"ReadAllBytesAsync:{e.ToString()}");
+                }
+                return null;
             }
         }
 
@@ -86,6 +90,10 @@ namespace MMDPlayerForVR.PmxImporter.Core
             }
             else
             {
+                if (path.StartsWith(_temporaryCachePath))
+                {
+                    return true;
+                }
                 return File.Exists(path);
             }
         }

@@ -14,6 +14,9 @@ namespace MMDPlayerForVR.PmxImporter
 
     public class PmxImporterPipeline
     {
+        public string jpName = "<名無し>";
+        public string enName = "<NoName>";
+
         private readonly PmxParser _parser;
         private readonly IPmxMeshBuilder _meshBuilder;
         private readonly IPmxBoneBuilder _boneBuilder;
@@ -96,7 +99,18 @@ namespace MMDPlayerForVR.PmxImporter
                 }
                 else
                 {
-                    basePath = System.IO.Path.GetDirectoryName(filePath);
+                    string directory = System.IO.Path.GetDirectoryName(filePath);
+
+                    if (directory != null &&
+                        System.IO.Path.GetFileName(directory) == "cache" &&
+                        !System.IO.Directory.Exists(directory))
+                    {
+                        basePath = System.IO.Path.GetDirectoryName(directory);
+                    }
+                    else
+                    {
+                        basePath = directory;
+                    }
                 }
                 Material[] materials = await _materialBuilder.BuildAsync(doc, basePath);
 

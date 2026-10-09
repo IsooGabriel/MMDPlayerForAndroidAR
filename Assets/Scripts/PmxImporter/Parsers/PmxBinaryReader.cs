@@ -26,10 +26,12 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
         public void SetupHeader(byte[] globals)
         {
             if (globals.Length < 8)
+            {
                 throw new Exception("Invalid PMX globals length.");
+            }
 
             TextEncoding = globals[0] == 0 ? Encoding.Unicode : Encoding.UTF8;
-            
+
             // Append sizes
             VertexIndexSize = globals[2];
             TextureIndexSize = globals[3];

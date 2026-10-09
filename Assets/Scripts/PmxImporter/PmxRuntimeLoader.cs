@@ -2,7 +2,9 @@ using MMDPlayerForVR.PmxImporter.Builders;
 using MMDPlayerForVR.Pose.Application;
 using MMDPlayerForVR.Pose.Infrastructure;
 using MMDPlayerForVR.Services;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -21,12 +23,17 @@ namespace MMDPlayerForVR.PmxImporter
         public string pmxFilePath = "";
         public string vmdFilePath = "";
 
+        [NonSerialized]
+        public string pmxName = "";
+
         [Tooltip("If true, automatically loads the model when the scene starts")]
         public bool loadOnStart = false;
 
         [Header("IK Debug")]
         [Tooltip("If true, skip leg IK chains (足IK親・足ＩＫ・つま先ＩＫ) and apply FK only, for debugging")]
         public bool skipLegIk = false;
+
+        public Action<string> OnFinishInitiation;
 
         private PmxImporterPipeline _pipeline;
         private PlayerLogService _logService;
@@ -103,7 +110,22 @@ namespace MMDPlayerForVR.PmxImporter
                 {
                     _logService.Log($"{pmxPath} is loading...");
                 }
-                await LoadModelAsync(pmxPath);
+
+                _logService.Log($"PATH = [{pmxPath}]");
+                _logService.Log($"File.Exists = {File.Exists(pmxPath)}");
+                _logService.Log($"Directory.Exists = {Directory.Exists(Path.GetDirectoryName(pmxPath))}");
+                string directory = Path.GetDirectoryName(pmxPath);
+
+                if (Directory.Exists(directory))
+                {
+                    foreach (string file in Directory.GetFiles(directory))
+                    {
+                        Debug.Log($"ACTUAL FILE = [{file}]");
+                    }
+                }
+                GameObject model = await LoadModelAsync(pmxPath);
+                OnFinishInitiation?.Invoke(model.name);
+                pmxName = model.name;
             }
             else
             {
@@ -112,6 +134,7 @@ namespace MMDPlayerForVR.PmxImporter
                     _logService.LogError($"{pmxPath} is null or empty");
                 }
             }
+
         }
 
         /// <summary>
