@@ -1,5 +1,3 @@
-using System.Net.NetworkInformation;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
@@ -124,7 +122,7 @@ public class Movement : MonoBehaviour
 
         if (context.performed)
         {
-            _turnMoveInput = -1;
+            _turnMoveInput = 1;
         }
     }
     private void OnTurnLeft(UnityEngine.InputSystem.InputAction.CallbackContext context)
@@ -136,7 +134,7 @@ public class Movement : MonoBehaviour
 
         if (context.performed)
         {
-            _turnMoveInput = 1;
+            _turnMoveInput = -1;
         }
     }
 
@@ -167,16 +165,16 @@ public class Movement : MonoBehaviour
             return;
         }
 
-        targetTransform.position += new Vector3(0, _verticalMoveInput*verticalSpeed*Time.deltaTime, 0);
+        targetTransform.position += new Vector3(0, _verticalMoveInput * verticalSpeed * Time.deltaTime, 0);
     }
-    
+
     private void TurnMovementUpdate()
     {
-        if( _turnMoveInput == 0)
+        if (_turnMoveInput == 0)
         {
             return;
         }
-        targetTransform.Rotate(0, _turnMoveInput*turnSpeed*Time.deltaTime, 0); 
+        targetTransform.Rotate(0, _turnMoveInput * turnSpeed * Time.deltaTime, 0);
     }
 
     private void Update()
