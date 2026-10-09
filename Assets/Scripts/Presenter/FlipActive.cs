@@ -1,12 +1,12 @@
 using System.Net.NetworkInformation;
 using UnityEngine;
 
-public class LogDisplayView : MonoBehaviour
+public class FlipActive : MonoBehaviour
 {
     [SerializeField]
     private GameObject logObject;
 
-    public void OnClickDisplayButton()
+    public void OnFlipActive()
     {
         logObject.SetActive(!logObject.activeSelf);
     }
