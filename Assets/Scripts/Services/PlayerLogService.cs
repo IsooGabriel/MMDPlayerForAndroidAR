@@ -21,11 +21,6 @@ namespace MMDPlayerForVR.Services
         /// </summary>
         public void Log(string message)
         {
-            if (_displayLog != null)
-            {
-                _displayLog.text = $"{message}\n{_displayLog.text}";
-            }
-            SaveLog(message);
             Debug.Log(message);
         }
 
@@ -34,22 +29,38 @@ namespace MMDPlayerForVR.Services
         /// </summary>
         public void LogError(string message)
         {
-            if (_displayLog != null)
-            {
-                _displayLog.text = $"<color=red>Error: {message}</color>\n{_displayLog.text}";
-            }
-            SaveLog(message);
             Debug.LogError(message);
         }
 
         public void LogWarning(string message)
         {
+            Debug.LogWarning(message);
+        }
+
+        private void HandleLogMessage(string message, string _, LogType type)
+        {
+            string displayMessage;
+            switch (type)
+            {
+                case LogType.Warning:
+                    displayMessage = $"<color=yellow>Warning: {message}</color>";
+                    break;
+                case LogType.Error:
+                case LogType.Assert:
+                case LogType.Exception:
+                    displayMessage = $"<color=red>Error: {message}</color>";
+                    break;
+                default:
+                    displayMessage = message;
+                    break;
+            }
+
             if (_displayLog != null)
             {
-                _displayLog.text = $"<color=yellow>Warning: {message}</color>\n{_displayLog.text}";
+                _displayLog.text = $"{displayMessage}\n{_displayLog.text}";
             }
+
             SaveLog(message);
-            Debug.LogWarning(message);
         }
 
         private void SaveLog(string message)
@@ -64,6 +75,12 @@ namespace MMDPlayerForVR.Services
                 Application.persistentDataPath,
                 "MMD4AR_GabuGabuNoMi.log"
             );
+            Application.logMessageReceived += HandleLogMessage;
+        }
+
+        private void OnDisable()
+        {
+            Application.logMessageReceived -= HandleLogMessage;
         }
     }
 }

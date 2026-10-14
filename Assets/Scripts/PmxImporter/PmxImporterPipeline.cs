@@ -1,6 +1,5 @@
 using MMDPlayerForVR.PmxImporter.Core;
 using MMDPlayerForVR.PmxImporter.Parsers;
-using MMDPlayerForVR.Services;
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -22,7 +21,6 @@ namespace MMDPlayerForVR.PmxImporter
         private readonly IPmxBoneBuilder _boneBuilder;
         private readonly IPmxMaterialBuilder _materialBuilder;
         private readonly IPmxPhysicsBuilder _physicsBuilder;
-        private readonly PlayerLogService _logService;
 
         /// <summary>最後にインポートしたPMXドキュメント。インポート前はnull。</summary>
         public PmxDocument LastImportedDocument { get; private set; }
@@ -30,21 +28,18 @@ namespace MMDPlayerForVR.PmxImporter
         /// <summary>最後にインポートしたボーンTransform配列（インデックス対応）。インポート前はnull。</summary>
         public Transform[] LastImportedBoneTransforms { get; private set; }
 
-        [VContainer.Inject]
         public PmxImporterPipeline(
             PmxParser parser,
             IPmxMeshBuilder meshBuilder,
             IPmxBoneBuilder boneBuilder,
             IPmxMaterialBuilder materialBuilder,
-            IPmxPhysicsBuilder physicsBuilder,
-            PlayerLogService logService)
+            IPmxPhysicsBuilder physicsBuilder)
         {
             _parser = parser;
             _meshBuilder = meshBuilder;
             _boneBuilder = boneBuilder;
             _materialBuilder = materialBuilder;
             _physicsBuilder = physicsBuilder;
-            _logService = logService;
         }
 
         public async Task<GameObject> ImportAsync(string filePath)
@@ -54,18 +49,12 @@ namespace MMDPlayerForVR.PmxImporter
             {
                 // Stage 1: Parse Binary (Background Thread)
                 currentStage = "PMXバイナリ解析";
-                if (_logService != null)
-                {
-                    _logService.Log("Parsing PMX binary...");
-                }
+                Debug.Log("Parsing PMX binary...");
                 PmxDocument doc = await _parser.ParseAsync(filePath);
 
                 // Stage 3: Build Bones (Main Thread/Coroutine)
                 currentStage = "ボーン構築";
-                if (_logService != null)
-                {
-                    _logService.Log("Building bones...");
-                }
+                Debug.Log("Building bones...");
                 var boneResult = await _boneBuilder.BuildAsync(doc);
                 Transform rootBone = boneResult.root;
                 Transform[] boneTransforms = boneResult.bones;
@@ -73,10 +62,7 @@ namespace MMDPlayerForVR.PmxImporter
 
                 // Stage 2: Build Mesh (Main Thread/Coroutine)
                 currentStage = "メッシュ構築";
-                if (_logService != null)
-                {
-                    _logService.Log("Building mesh...");
-                }
+                Debug.Log("Building mesh...");
                 Mesh mesh = await _meshBuilder.BuildAsync(doc);
 
                 // bindposes must be set BEFORE assigning the mesh to SkinnedMeshRenderer.
@@ -87,10 +73,7 @@ namespace MMDPlayerForVR.PmxImporter
 
                 // Stage 4: Build Materials (Main Thread/Coroutine)
                 currentStage = "マテリアル構築";
-                if (_logService != null)
-                {
-                    _logService.Log("Building materials...");
-                }
+                Debug.Log("Building materials...");
                 string basePath;
                 if (filePath.Contains("://"))
                 {
@@ -116,10 +99,7 @@ namespace MMDPlayerForVR.PmxImporter
 
                 // Assemble GameObject
                 currentStage = "GameObjectアセンブル";
-                if (_logService != null)
-                {
-                    _logService.Log("Assembling GameObject...");
-                }
+                Debug.Log("Assembling GameObject...");
                 GameObject rootObj = new GameObject(doc.Name);
                 // Convert MMD scale to Unity scale (1/10th)
                 rootObj.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -136,17 +116,11 @@ namespace MMDPlayerForVR.PmxImporter
 
                 // Stage 5: Build Physics (Main Thread)
                 currentStage = "物理演算構築";
-                if (_logService != null)
-                {
-                    _logService.Log("Building physics...");
-                }
+                Debug.Log("Building physics...");
                 _physicsBuilder.Build(doc, rootBone, boneTransforms);
 
                 currentStage = "完了";
-                if (_logService != null)
-                {
-                    _logService.Log("Model import completed successfully!");
-                }
+                Debug.Log("Model import completed successfully!");
 
                 // インポート成功後にPMXデータとボーンTransformを保持（IK用）
                 LastImportedDocument = doc;
@@ -157,10 +131,6 @@ namespace MMDPlayerForVR.PmxImporter
             catch (Exception ex)
             {
                 string errorMessage = $"ステージ「{currentStage}」で失敗: {ex.GetType().Name}: {ex.Message}";
-                if (_logService != null)
-                {
-                    _logService.LogError(errorMessage);
-                }
                 Debug.LogError($"[PmxImporter] {errorMessage}\n{ex.StackTrace}");
                 return null;
             }

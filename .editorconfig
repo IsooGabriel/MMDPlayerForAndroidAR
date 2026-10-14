@@ -1,0 +1,187 @@
+# EditorConfig - https://editorconfig.org
+# Unity C# プロジェクト向け設定（RizeLibraryCodingGuidelines準拠）
+
+root = true
+
+# ─── 全ファイル共通 ───────────────────────────────────────────────────────────
+[*]
+charset                  = utf-8       # 文字コード：UTF-8
+end_of_line              = crlf        # 改行コード：CRLF（Windows）
+indent_style             = space       # インデント：スペース
+indent_size              = 4           # インデント幅：4
+tab_width                = 4           # タブ幅：4
+trim_trailing_whitespace = true        # 行末の空白を削除する
+insert_final_newline     = true        # ファイル末尾に改行を挿入する
+
+# ─── C# ──────────────────────────────────────────────────────────────────────
+[*.cs]
+charset = utf-8-bom                    # UnityはBOM付きUTF-8を使用する
+
+# --- 基本フォーマット ---
+# オールマンスタイル（波括弧は必ず改行後に記述する）
+csharp_new_line_before_open_brace                                  = all    # すべての波括弧を新しい行に配置する
+csharp_new_line_before_else                                        = true   # else を新しい行に配置する
+csharp_new_line_before_catch                                       = true   # catch を新しい行に配置する
+csharp_new_line_before_finally                                     = true   # finally を新しい行に配置する
+csharp_new_line_before_members_in_object_initializers             = true   # オブジェクト初期化子のメンバーを新しい行に配置する
+csharp_new_line_before_members_in_anonymous_types                  = true   # 匿名型のメンバーを新しい行に配置する
+csharp_new_line_between_query_expression_clauses                   = true   # クエリ式の句を新しい行に配置する
+
+# インデント
+csharp_indent_case_contents                                        = true   # case の内容をインデントする
+csharp_indent_switch_labels                                        = true   # switch ラベルをインデントする
+csharp_indent_labels                                               = flush_left  # ラベルを左端に配置する
+csharp_indent_block_contents                                       = true   # ブロックの内容をインデントする
+csharp_indent_braces                                               = false  # 波括弧自体はインデントしない
+
+# スペース
+# 丸括弧の中にスペースを入れない
+csharp_space_after_cast                                            = false  # キャスト後にスペースを入れない
+csharp_space_after_keywords_in_control_flow_statements             = true   # if・for 等のキーワード後にスペースを入れる
+csharp_space_between_method_declaration_parameter_list_parentheses = false  # メソッド宣言の引数リストの括弧内にスペースを入れない
+csharp_space_between_method_call_parameter_list_parentheses        = false  # メソッド呼び出しの引数リストの括弧内にスペースを入れない
+csharp_space_between_parentheses                                   = false  # 括弧の内側にスペースを入れない
+csharp_space_before_colon_in_inheritance_clause                    = true   # 継承句のコロン前にスペースを入れる
+csharp_space_after_colon_in_inheritance_clause                     = true   # 継承句のコロン後にスペースを入れる
+csharp_space_around_binary_operators                               = before_and_after  # 二項演算子の前後にスペースを入れる
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false  # 空引数リストの括弧内にスペースを入れない
+csharp_space_between_method_call_name_and_opening_parenthesis      = false  # メソッド名と括弧の間にスペースを入れない
+csharp_space_between_method_call_empty_parameter_list_parentheses  = false  # 空引数の括弧内にスペースを入れない
+# カンマの後にスペースを入れる
+csharp_space_after_comma                                           = true   # カンマの後にスペースを入れる
+csharp_space_before_comma                                          = false  # カンマの前にスペースを入れない
+csharp_space_after_dot                                             = false  # ドットの後にスペースを入れない
+csharp_space_before_dot                                            = false  # ドットの前にスペースを入れない
+csharp_space_after_semicolon_in_for_statement                      = true   # for 文のセミコロン後にスペースを入れる
+csharp_space_before_semicolon_in_for_statement                     = false  # for 文のセミコロン前にスペースを入れない
+
+# 波括弧は必ず付ける
+csharp_prefer_braces                                               = true : warning  # 波括弧の省略を警告する
+
+# --- using 順序 ---
+# System → Unity → その他（アルファベット順）
+dotnet_sort_system_directives_first                                = true   # System 系の using を先頭に並べる
+dotnet_separate_import_directive_groups                            = false  # using グループ間に空行を入れない
+
+# --- var の使用 ---
+# 型が明示的にわかる場合は var を使用する
+csharp_style_var_for_built_in_types                                = false : suggestion  # 組み込み型には var を使わない
+csharp_style_var_when_type_is_apparent                             = true  : suggestion  # 右辺から型が明らかな場合は var を使う
+csharp_style_var_elsewhere                                         = false : suggestion  # それ以外では var を使わない
+
+# --- ラムダ・式形式メソッド ---
+# メソッドはラムダ式で省略しない
+csharp_style_expression_bodied_methods                             = false : warning    # メソッドをラムダ式で省略しない（警告）
+csharp_style_expression_bodied_constructors                        = false : warning    # コンストラクタをラムダ式で省略しない（警告）
+csharp_style_expression_bodied_operators                           = false : suggestion # 演算子をラムダ式で省略しない
+csharp_style_expression_bodied_properties                          = true  : suggestion # プロパティは式形式を許可する
+csharp_style_expression_bodied_indexers                            = true  : suggestion # インデクサは式形式を許可する
+csharp_style_expression_bodied_accessors                           = true  : suggestion # アクセサは式形式を許可する
+
+# --- その他スタイル ---
+csharp_style_pattern_matching_over_is_with_cast_check              = true  : suggestion  # is + キャストよりパターンマッチングを使う
+csharp_style_pattern_matching_over_as_with_null_check              = true  : suggestion  # as + null チェックよりパターンマッチングを使う
+csharp_style_inlined_variable_declaration                          = true  : suggestion  # out 変数をインラインで宣言する
+csharp_style_throw_expression                                      = true  : suggestion  # throw 式を使う
+csharp_style_conditional_delegate_call                             = true  : suggestion  # デリゲートは条件付き呼び出しを使う
+csharp_prefer_simple_default_expression                            = true  : suggestion  # default(T) より default を使う
+dotnet_style_object_initializer                                    = true  : suggestion  # オブジェクト初期化子を使う
+dotnet_style_collection_initializer                                = true  : suggestion  # コレクション初期化子を使う
+# ※ UnityEngine.Object 派生（GameObject / Component 等）は == null が独自判定（破棄済み＝null）のため、
+#   ??・?.・is null は破棄済みオブジェクトを検出できない。IDEが提案しないようにオフにする。
+dotnet_style_coalesce_expression                                   = false  # null 合体演算子（??）への書き換えを提案しない
+dotnet_style_null_propagation                                      = false  # null 条件演算子（?.）への書き換えを提案しない
+dotnet_style_prefer_is_null_check_over_reference_equality_method   = false  # "is null" への書き換えを提案しない
+dotnet_style_explicit_tuple_names                                  = true  : suggestion  # タプルには明示的な名前を付ける
+
+# --- アクセス修飾子 ---
+# アクセス修飾子は必ずつける
+dotnet_style_require_accessibility_modifiers                       = always : warning  # アクセス修飾子の省略を警告する
+
+# --- 命名規則 ─────────────────────────────────────────────────────────────────
+# PascalCase：クラス・メソッド・プロパティ・publicフィールド・staticフィールド
+dotnet_naming_rule.pascal_case_rule.symbols                        = pascal_case_symbols
+dotnet_naming_rule.pascal_case_rule.style                          = pascal_case_style
+dotnet_naming_rule.pascal_case_rule.severity                       = warning           # 違反時は警告を出す
+
+dotnet_naming_symbols.pascal_case_symbols.applicable_kinds         = class, struct, enum, interface, delegate, method, property, event, namespace
+dotnet_naming_symbols.pascal_case_symbols.applicable_accessibilities = *               # すべてのアクセス修飾子に適用する
+
+dotnet_naming_style.pascal_case_style.capitalization               = pascal_case       # PascalCase を使用する
+
+# インターフェース：先頭に "I" + PascalCase
+dotnet_naming_rule.interface_rule.symbols                          = interface_symbols
+dotnet_naming_rule.interface_rule.style                            = interface_style
+dotnet_naming_rule.interface_rule.severity                         = warning           # 違反時は警告を出す
+
+dotnet_naming_symbols.interface_symbols.applicable_kinds           = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+
+dotnet_naming_style.interface_style.required_prefix                = I                 # 先頭に "I" を付ける
+dotnet_naming_style.interface_style.capitalization                 = pascal_case
+
+# private / protected フィールド
+#   - [SerializeField] 付き ：アンダーバーなしの camelCase（例: moveSpeed）
+#   - 上記以外（非シリアライズ）：先頭に "_" + camelCase（例: _currentHp）
+# ※ .editorconfig の命名規則は [SerializeField] などの属性を判別できないため、
+#   「SerializeField の有無」で使い分けるルールは機械的に強制できない。
+#   そのため severity を silent にして警告は出さず、"_" 付きは新規フィールド生成時の既定スタイルとして残す。
+dotnet_naming_rule.private_field_rule.symbols                      = private_field_symbols
+dotnet_naming_rule.private_field_rule.style                        = private_field_style
+dotnet_naming_rule.private_field_rule.severity                     = silent            # 警告は出さない（SerializeField と区別できないため）
+
+dotnet_naming_symbols.private_field_symbols.applicable_kinds       = field
+dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private, protected, protected_internal
+
+dotnet_naming_style.private_field_style.required_prefix            = _                 # 非シリアライズ時の既定："_" を付ける
+dotnet_naming_style.private_field_style.capitalization             = camel_case
+
+# ローカル変数・パラメータ：camelCase
+dotnet_naming_rule.local_var_rule.symbols                          = local_var_symbols
+dotnet_naming_rule.local_var_rule.style                            = camel_case_style
+dotnet_naming_rule.local_var_rule.severity                         = warning           # 違反時は警告を出す
+
+dotnet_naming_symbols.local_var_symbols.applicable_kinds           = local, parameter
+dotnet_naming_symbols.local_var_symbols.applicable_accessibilities = *
+
+dotnet_naming_style.camel_case_style.capitalization                = camel_case        # camelCase を使用する
+
+# 定数・static readonly フィールド：UPPER_SNAKE_CASE
+dotnet_naming_rule.const_rule.symbols                              = const_symbols
+dotnet_naming_rule.const_rule.style                                = upper_snake_case_style
+dotnet_naming_rule.const_rule.severity                             = warning           # 違反時は警告を出す
+
+dotnet_naming_symbols.const_symbols.applicable_kinds               = field
+dotnet_naming_symbols.const_symbols.applicable_accessibilities     = private, public
+dotnet_naming_symbols.const_symbols.required_modifiers             = const
+
+dotnet_naming_rule.static_readonly_rule.symbols                    = static_readonly_symbols
+dotnet_naming_rule.static_readonly_rule.style                      = upper_snake_case_style
+dotnet_naming_rule.static_readonly_rule.severity                   = warning           # 違反時は警告を出す
+
+dotnet_naming_symbols.static_readonly_symbols.applicable_kinds     = field
+dotnet_naming_symbols.static_readonly_symbols.applicable_accessibilities = private, public
+dotnet_naming_symbols.static_readonly_symbols.required_modifiers   = static, readonly
+
+dotnet_naming_style.upper_snake_case_style.capitalization          = all_upper         # UPPER_SNAKE_CASE を使用する
+dotnet_naming_style.upper_snake_case_style.word_separator          = _
+
+# ─── JSON / YAML ──────────────────────────────────────────────────────────────
+[*.{json,yaml,yml}]
+indent_size = 2                        # インデント幅：2
+
+# ─── Markdown ─────────────────────────────────────────────────────────────────
+[*.md]
+trim_trailing_whitespace = false       # 行末スペースを保持する（意図的な改行のため）
+
+# ─── Unity 生成アセット（YAML形式） ───────────────────────────────────────────
+# Unity が LF・末尾改行なしで書き出すため、エディタ側で変更しない
+[*.{unity,prefab,asset,mat,anim,controller,overrideController,playable,physicMaterial,lighting,flare}]
+end_of_line              = lf
+trim_trailing_whitespace = false
+insert_final_newline     = false
+
+# ─── Unity メタファイル ───────────────────────────────────────────────────────
+[*.meta]
+trim_trailing_whitespace = false       # Unity が生成するファイルのため変更しない
+insert_final_newline     = false       # Unity が生成するファイルのため変更しない

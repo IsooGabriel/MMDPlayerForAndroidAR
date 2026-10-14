@@ -195,7 +195,7 @@ namespace MMDPlayerForVR.PmxImporter
             }
 
             var physicsSyncs = model.GetComponentsInChildren<PmxPhysicsSync>(true).ToList();
-            var applier = new TransformPoseApplier(boneMap, physicsSyncs, _logService);
+            var applier = new TransformPoseApplier(boneMap, physicsSyncs);
 
             // IK setup
             IkContextAdapter ikContext = null;

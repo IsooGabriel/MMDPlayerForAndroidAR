@@ -17,7 +17,7 @@ namespace MMDPlayerForVR
         public RawImage sample;
         public float sampleDisplayTime = 0.7f;
 
-        private const string _albumFolder = "Pictures/MMD4AR";
+        private const string AlbumFolder = "Pictures/MMD4AR";
 
         [SerializeField]
         private PmxRuntimeLoader _pmxRuntimeLoader;
@@ -96,7 +96,7 @@ namespace MMDPlayerForVR
             _timer = sampleDisplayTime;
             sampleParent.SetActive(true);
             sample.texture = texture;
-            aspectRatioFitter.aspectRatio = texture.width / texture.height;
+            aspectRatioFitter.aspectRatio = (float)texture.width / texture.height;
         }
 
         public bool TrySave(byte[] png, string fileName, out string error)
@@ -118,7 +118,7 @@ namespace MMDPlayerForVR
                 using var values = new AndroidJavaObject("android.content.ContentValues");
                 values.Call("put", "_display_name", fileName);
                 values.Call("put", "mime_type", "image/png");
-                values.Call("put", "relative_path", _albumFolder);
+                values.Call("put", "relative_path", AlbumFolder);
                 values.Call("put", "is_pending", pending);
 
                 using var mediaClass = new AndroidJavaClass("android.provider.MediaStore$Images$Media");
@@ -140,7 +140,7 @@ namespace MMDPlayerForVR
 
                 using var done = new AndroidJavaObject("android.content.ContentValues");
                 using var pendingDone = new AndroidJavaObject("java.lang.Integer", 0);
-                done.Call("put", "is_pending", pending);
+                done.Call("put", "is_pending", pendingDone);
                 resolver.Call<int>("update", uri, done, null, null);
                 return true;
             }

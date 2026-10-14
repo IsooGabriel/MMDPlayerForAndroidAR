@@ -1,5 +1,4 @@
 using MMDPlayerForVR.Pose.Application;
-using MMDPlayerForVR.Services;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -10,11 +9,9 @@ namespace MMDPlayerForVR.PmxImporter.Core
 {
     public class AsyncFileLoader : IStreamingAssetsReader
     {
-        private PlayerLogService _playLogService;
-        private readonly string _temporaryCachePath = "/data/user/0/";
-        public AsyncFileLoader(PlayerLogService playLogService)
+        private const string TemporaryCachePath = "/data/user/0/";
+        public AsyncFileLoader()
         {
-            _playLogService = playLogService;
         }
         public string AndroidPathResolves(string path)
         {
@@ -26,7 +23,7 @@ namespace MMDPlayerForVR.PmxImporter.Core
                     (saPath.EndsWith("/") ? saPath + relativePath : saPath + "/" + relativePath) :
                     Path.Combine(saPath, relativePath);
             }
-            _playLogService.Log($"log:{path}");
+            Debug.Log($"log:{path}");
             return path;
         }
 
@@ -64,7 +61,7 @@ namespace MMDPlayerForVR.PmxImporter.Core
                 }
                 catch (Exception e)
                 {
-                    _playLogService.LogError($"ReadAllBytesAsync:{e.ToString()}");
+                    Debug.LogError($"ReadAllBytesAsync:{e.ToString()}");
                 }
                 return null;
             }
@@ -90,7 +87,7 @@ namespace MMDPlayerForVR.PmxImporter.Core
             }
             else
             {
-                if (path.StartsWith(_temporaryCachePath))
+                if (path.StartsWith(TemporaryCachePath))
                 {
                     return true;
                 }

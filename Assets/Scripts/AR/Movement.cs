@@ -52,10 +52,10 @@ public class Movement : MonoBehaviour
         _inputActions.Player.Move.performed -= OnMove;
         _inputActions.Player.Move.canceled -= OnMove;
 
-        _inputActions.Player.Move.performed -= OnUp;
+        _inputActions.Player.Up.performed -= OnUp;
         _inputActions.Player.Up.canceled -= OnUp;
 
-        _inputActions.Player.Move.performed -= OnDown;
+        _inputActions.Player.Down.performed -= OnDown;
         _inputActions.Player.Down.canceled -= OnDown;
 
         _inputActions.Player.TurnRigth.performed -= OnTurnRigth;

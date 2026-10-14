@@ -49,8 +49,7 @@ namespace MMDPlayerForVR
                 resolver =>
                 {
                     IStreamingAssetsReader streamingAssetsReader = resolver.Resolve<IStreamingAssetsReader>();
-                    PlayerLogService playerLogService = resolver.Resolve<PlayerLogService>();
-                    return new PmxMaterialBuilder(_materialTemplates, streamingAssetsReader, playerLogService);
+                    return new PmxMaterialBuilder(_materialTemplates, streamingAssetsReader);
                 },
                 Lifetime.Transient
             );
@@ -66,9 +65,8 @@ namespace MMDPlayerForVR
                 {
                     var reader = resolver.Resolve<IStreamingAssetsReader>();
                     var parser = resolver.Resolve<MMDPlayerForVR.Pose.Application.IVmdParser>();
-                    var logService = resolver.Resolve<PlayerLogService>();
                     // IIkSolverはPmxRuntimeLoader内で生成・注入するためここではnull
-                    return new MMDPlayerForVR.Pose.Application.ApplyInitialPoseUseCase(reader, parser, logService, null);
+                    return new MMDPlayerForVR.Pose.Application.ApplyInitialPoseUseCase(reader, parser, null);
                 },
                 Lifetime.Transient
             );

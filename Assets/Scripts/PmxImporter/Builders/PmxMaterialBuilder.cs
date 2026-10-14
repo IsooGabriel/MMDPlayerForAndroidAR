@@ -1,6 +1,5 @@
 using MMDPlayerForVR.PmxImporter.Core;
 using MMDPlayerForVR.Pose.Application;
-using MMDPlayerForVR.Services;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -9,14 +8,12 @@ namespace MMDPlayerForVR.PmxImporter.Builders
 {
     public class PmxMaterialBuilder : IPmxMaterialBuilder
     {
-        private PmxMaterialTemplates _materialTemplates = null;
-        private IStreamingAssetsReader _streamingAssetsReader;
-        private PlayerLogService _playerLogService;
-        public PmxMaterialBuilder(PmxMaterialTemplates materialTemplates, IStreamingAssetsReader streamingAssetsReader, PlayerLogService playerLogService)
+        private readonly PmxMaterialTemplates _materialTemplates;
+        private readonly IStreamingAssetsReader _streamingAssetsReader;
+        public PmxMaterialBuilder(PmxMaterialTemplates materialTemplates, IStreamingAssetsReader streamingAssetsReader)
         {
             _materialTemplates = materialTemplates;
             _streamingAssetsReader = streamingAssetsReader;
-            _playerLogService = playerLogService;
         }
 
         public async Task<Material[]> BuildAsync(PmxDocument doc, string basePath)
@@ -29,7 +26,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
             {
                 // PMX texture paths often use Windows backslashes
                 string texRelative = doc.Textures[i].Replace('\\', '/').TrimStart('/');
-                _playerLogService.Log($"[material build]相対パス:{texRelative}");
+                Debug.Log($"[material build]相対パス:{texRelative}");
                 if (texRelative.StartsWith("./"))
                 {
                     texRelative = texRelative.Substring(2);
@@ -48,7 +45,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                         texRelative = texRelative.Substring(6); // "cache/".Length
                     }
                 }
-                _playerLogService.Log($"[material build]cache削除後相対パス:{texRelative}");
+                Debug.Log($"[material build]cache削除後相対パス:{texRelative}");
 
                 string texPath;
                 if (basePath.Contains("://"))
@@ -60,7 +57,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                     texPath = Path.Combine(basePath, texRelative);
                 }
 
-                _playerLogService.Log($"[material build]最終相対パス:{texPath}");
+                Debug.Log($"[material build]最終相対パス:{texPath}");
 
                 textures[i] = await LoadTextureAsync(texPath);
             }
@@ -145,7 +142,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
         {
             if (!await _streamingAssetsReader.ExistsAsync(path))
             {
-                _playerLogService.LogWarning($"[PmxMaterialBuilder] Texture not found (or HEAD failed): {path}");
+                Debug.LogWarning($"[PmxMaterialBuilder] Texture not found (or HEAD failed): {path}");
                 // We'll proceed to try loading anyway just in case HEAD failed but GET works
             }
 
@@ -172,7 +169,7 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                     bytes[1] == 0xD8 &&
                     bytes[2] == 0xFF))
                 {
-                    _playerLogService.Log($"[PmxMaterialBuilder] {path}is png or jpg");
+                    Debug.Log($"[PmxMaterialBuilder] {path}is png or jpg");
 
                     if (tex.LoadImage(bytes))
                     {
@@ -183,12 +180,12 @@ namespace MMDPlayerForVR.PmxImporter.Builders
                         bytes[0] == 42 &&
                         bytes[1] == 4D)
                 {
-                    _playerLogService.Log($"[PmxMaterialBuilder] {path}is bmp image");
+                    Debug.Log($"[PmxMaterialBuilder] {path}is bmp image");
                     return BmpLoader.Load(bytes);
                 }
                 else
                 {
-                    _playerLogService.Log($"[PmxMaterialBuilder] {path}is tga image");
+                    Debug.Log($"[PmxMaterialBuilder] {path}is tga image");
 
                     decodedImage = TgaDecoder.Decode(bytes);
                     tex = new Texture2D(decodedImage.Width, decodedImage.Height, TextureFormat.RGBA32, true, false);
@@ -200,12 +197,12 @@ namespace MMDPlayerForVR.PmxImporter.Builders
 
 
                 // TGA or BMP might fail with standard LoadImage, requires custom decoders.
-                _playerLogService.LogWarning($"[PmxMaterialBuilder] Failed to decode texture natively (TGA/BMP custom decoder required): {path}");
+                Debug.LogWarning($"[PmxMaterialBuilder] Failed to decode texture natively (TGA/BMP custom decoder required): {path}");
                 return CreateFallbackTexture();
             }
             catch (System.Exception ex)
             {
-                _playerLogService.LogWarning($"[PmxMaterialBuilder] Exception loading texture {path}: {ex.Message}");
+                Debug.LogWarning($"[PmxMaterialBuilder] Exception loading texture {path}: {ex.Message}");
                 return CreateFallbackTexture();
             }
         }

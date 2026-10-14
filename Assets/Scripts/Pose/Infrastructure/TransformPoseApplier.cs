@@ -1,7 +1,6 @@
 using MMDPlayerForVR.PmxImporter.Builders;
 using MMDPlayerForVR.Pose.Application;
 using MMDPlayerForVR.Pose.Domain;
-using MMDPlayerForVR.Services;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,13 +11,11 @@ namespace MMDPlayerForVR.Pose.Infrastructure
         private readonly Dictionary<string, Transform> _bones;
         private readonly Dictionary<string, (Vector3 pos, Quaternion rot)> _rest = new Dictionary<string, (Vector3 pos, Quaternion rot)>();
         private readonly List<PmxPhysicsSync> _physicsSyncs;
-        private readonly PlayerLogService _playerLogService;
 
-        public TransformPoseApplier(Dictionary<string, Transform> boneMap, List<PmxPhysicsSync> physicsSyncs, PlayerLogService playerLogService)
+        public TransformPoseApplier(Dictionary<string, Transform> boneMap, List<PmxPhysicsSync> physicsSyncs)
         {
             _bones = boneMap;
             _physicsSyncs = physicsSyncs;
-            _playerLogService = playerLogService;
 
             foreach (var kv in _bones)
             {
@@ -28,7 +25,7 @@ namespace MMDPlayerForVR.Pose.Infrastructure
 
         public void Apply(PoseState pose)
         {
-            _playerLogService.Log($"bones:{_bones.Count}");
+            Debug.Log($"bones:{_bones.Count}");
             foreach (var kv in _bones)
             {
                 var (rp, rr) = _rest[kv.Key];
@@ -48,7 +45,7 @@ namespace MMDPlayerForVR.Pose.Infrastructure
             {
                 if (!_bones.ContainsKey(name))
                 {
-                    _playerLogService.LogWarning($"[Pose] 対応するボーンなし: {name}");
+                    Debug.LogWarning($"[Pose] 対応するボーンなし: {name}");
                 }
             }
         }
