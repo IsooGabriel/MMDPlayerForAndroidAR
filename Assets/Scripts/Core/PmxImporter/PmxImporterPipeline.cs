@@ -1,5 +1,6 @@
 using MMDPlayerForVR.PmxImporter.Core;
 using MMDPlayerForVR.PmxImporter.Parsers;
+using MMDPlayerForVR.Pose.Application;
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace MMDPlayerForVR.PmxImporter
         public string enName = "<NoName>";
 
         private readonly PmxParser _parser;
+        private readonly IStreamingAssetsReader _reader;
         private readonly IPmxMeshBuilder _meshBuilder;
         private readonly IPmxBoneBuilder _boneBuilder;
         private readonly IPmxMaterialBuilder _materialBuilder;
@@ -30,12 +32,14 @@ namespace MMDPlayerForVR.PmxImporter
 
         public PmxImporterPipeline(
             PmxParser parser,
+            IStreamingAssetsReader reader,
             IPmxMeshBuilder meshBuilder,
             IPmxBoneBuilder boneBuilder,
             IPmxMaterialBuilder materialBuilder,
             IPmxPhysicsBuilder physicsBuilder)
         {
             _parser = parser;
+            _reader = reader;
             _meshBuilder = meshBuilder;
             _boneBuilder = boneBuilder;
             _materialBuilder = materialBuilder;
@@ -50,7 +54,8 @@ namespace MMDPlayerForVR.PmxImporter
                 // Stage 1: Parse Binary (Background Thread)
                 currentStage = "PMXバイナリ解析";
                 Debug.Log("Parsing PMX binary...");
-                PmxDocument doc = await _parser.ParseAsync(filePath);
+                PmxDocument doc = await _parser.ParseAsync(filePath, _reader);
+
 
                 // Stage 3: Build Bones (Main Thread/Coroutine)
                 currentStage = "ボーン構築";

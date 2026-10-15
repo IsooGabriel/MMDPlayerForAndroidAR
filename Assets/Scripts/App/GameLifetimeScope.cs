@@ -56,7 +56,19 @@ namespace MMDPlayerForVR
             builder.Register<IPmxPhysicsBuilder, PmxPhysicsBuilder>(Lifetime.Transient);
 
             // Register pipeline
-            builder.Register<PmxImporterPipeline>(Lifetime.Transient);
+            builder.Register<PmxImporterPipeline>(
+                resolver =>
+                {
+                    var parser = resolver.Resolve<PmxParser>();
+                    var reader = resolver.Resolve<IStreamingAssetsReader>();
+                    var meshBuilder = resolver.Resolve<IPmxMeshBuilder>();
+                    var boneBuilder = resolver.Resolve<IPmxBoneBuilder>();
+                    var materialBuilder = resolver.Resolve<IPmxMaterialBuilder>();
+                    var physicsBuilder = resolver.Resolve<IPmxPhysicsBuilder>();
+                    return new PmxImporterPipeline(parser, reader, meshBuilder, boneBuilder, materialBuilder, physicsBuilder);
+                },
+                Lifetime.Transient
+            );
 
             // Register Pose dependencies
             builder.Register<MMDPlayerForVR.Pose.Application.IVmdParser, MMDPlayerForVR.Pose.Infrastructure.VmdParser>(Lifetime.Transient);
@@ -70,6 +82,9 @@ namespace MMDPlayerForVR
                 },
                 Lifetime.Transient
             );
+
+            // Register PmxModelLoader (層A)
+            builder.Register<PmxModelLoader>(Lifetime.Transient);
 
             // Register target for injection if set
             if (_pmxRuntimeLoader != null)

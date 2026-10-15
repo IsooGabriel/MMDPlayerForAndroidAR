@@ -10,15 +10,14 @@ namespace MMDPlayerForVR.PmxImporter.Parsers
     public class PmxParser
     {
         private int _additionalUvCount;
-        private IStreamingAssetsReader _streamedAssetsReader;
-        public PmxParser(IStreamingAssetsReader streamedAssetsReader)
+
+        public PmxParser()
         {
-            _streamedAssetsReader = streamedAssetsReader;
         }
 
-        public async Task<PmxDocument> ParseAsync(string filePath)
+        public async Task<PmxDocument> ParseAsync(string filePath, IStreamingAssetsReader reader)
         {
-            byte[] fileBytes = await _streamedAssetsReader.ReadAllBytesAsync(filePath);
+            byte[] fileBytes = await reader.ReadAllBytesAsync(filePath);
             if (fileBytes == null)
             {
                 throw new FileNotFoundException($"File not found or failed to load: {filePath}");
