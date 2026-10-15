@@ -28,12 +28,6 @@ namespace MMDPlayerForVR.Pose.Application
         IReadOnlyDictionary<string, bool> ParseIkStates(byte[] data);
     }
 
-    public interface IStreamingAssetsReader
-    {
-        Task<byte[]> ReadAllBytesAsync(string relativePath);
-        Task<bool> ExistsAsync(string path);
-    }
-
     /// <summary>IKを解くポート。FK適用後に呼ばれる</summary>
     public interface IIkSolver
     {

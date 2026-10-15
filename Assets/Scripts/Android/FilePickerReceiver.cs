@@ -1,9 +1,7 @@
 
-using MMDPlayerForVR.Services;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using VContainer;
 
 namespace MMDPlayerForVR
 {
@@ -18,16 +16,8 @@ namespace MMDPlayerForVR
         [Header("Disable during loading")]
         [SerializeField] private MonoBehaviour[] _behavioursToDisableWhileLoading;
 
-        private PlayerLogService _playerLogService;
-
         // Android callback → main thread dispatch queue
         private readonly Queue<Action> _mainThreadQueue = new Queue<Action>();
-
-        [Inject]
-        public void Inject(PlayerLogService playerLogService)
-        {
-            _playerLogService = playerLogService;
-        }
 
         private void Update()
         {
@@ -75,7 +65,7 @@ namespace MMDPlayerForVR
             string destRoot = System.IO.Path.Combine(Application.persistentDataPath, "PmxCache");
             bridge.CallStatic("pickFolder", gameObject.name, destRoot);
 #else
-            _playerLogService.LogWarning("SafFolderPicker is only supported on Android Device.");
+            Debug.LogWarning("[FilePickerReceiver] SafFolderPicker is only supported on Android Device.");
 #endif
         }
 
@@ -137,7 +127,7 @@ namespace MMDPlayerForVR
         /// <summary>SafFolderBridge からのコピー進捗通知 (Javaスレッド)</summary>
         public void OnSafFolderProgress(string countStr)
         {
-            RunOnMainThread(() => _playerLogService.Log($"[SafFolder] Copied {countStr} files..."));
+            RunOnMainThread(() => Debug.Log($"[SafFolder] Copied {countStr} files..."));
         }
 
         /// <summary>SafFolderBridge からのコピー完了通知 (Javaスレッド)</summary>
@@ -145,10 +135,10 @@ namespace MMDPlayerForVR
         {
             RunOnMainThread(() =>
             {
-                _playerLogService.Log($"[SafFolder] Completed! Path: {destPath}");
+                Debug.Log($"[SafFolder] Completed! Path: {destPath}");
                 if (!System.IO.Directory.Exists(destPath))
                 {
-                    _playerLogService.LogError("[SafFolder] Destination directory does not exist.");
+                    Debug.LogError("[SafFolder] Destination directory does not exist.");
                     return;
                 }
 
@@ -164,13 +154,13 @@ namespace MMDPlayerForVR
 #if UNITY_ANDROID && !UNITY_EDITOR
                     ShowPmxSelectionDialog(pmxFiles);
 #else
-                    _playerLogService.LogWarning("[SafFolder] Multiple PMX files found. Selecting the first one in Editor.");
+                    Debug.LogWarning("[SafFolder] Multiple PMX files found. Selecting the first one in Editor.");
                     OnFileSelected(pmxFiles[0]);
 #endif
                 }
                 else
                 {
-                    _playerLogService.LogError("[SafFolder] No .pmx file found in the selected folder.");
+                    Debug.LogError("[SafFolder] No .pmx file found in the selected folder.");
                 }
             });
         }
@@ -225,12 +215,12 @@ namespace MMDPlayerForVR
 
         public void OnSafFolderCancelled(string empty)
         {
-            RunOnMainThread(() => _playerLogService.Log("[SafFolder] Cancelled"));
+            RunOnMainThread(() => Debug.Log("[SafFolder] Cancelled"));
         }
 
         public void OnSafFolderError(string error)
         {
-            RunOnMainThread(() => _playerLogService.LogError($"[SafFolder] Error: {error}"));
+            RunOnMainThread(() => Debug.LogError($"[SafFolder] Error: {error}"));
         }
     }
 }
